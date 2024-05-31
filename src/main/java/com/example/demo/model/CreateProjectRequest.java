@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import com.example.demo.entity.EProjectStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -17,4 +18,8 @@ public class CreateProjectRequest {
     private String name;
 
     private String description;
+    private Integer budget;
+    private String deadline;
+    private String videoPresentationUrl;
+    private String imageUrl;
 }

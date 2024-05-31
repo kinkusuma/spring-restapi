@@ -1,15 +1,13 @@
 package com.example.demo.service;
 
 import com.example.demo.entity.User;
-import com.example.demo.model.LoginUserRequest;
 import com.example.demo.model.RegisterUserRequest;
+import com.example.demo.model.UpdateUserPasswordRequest;
 import com.example.demo.model.UserResponse;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.security.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,15 +19,6 @@ public class UserService {
 
     @Autowired
     private ValidationService validationService;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
     private UserResponse toResponse(User user) {
         return UserResponse.builder()
@@ -51,24 +40,27 @@ public class UserService {
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        user.setPassword(BCrypt.hashpw(request.getPassword(), BCrypt.gensalt()));
         userRepository.save(user);
 
         return toResponse(user);
     }
 
-    @Transactional(readOnly = true)
-    public String login(LoginUserRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
+    public UserResponse getUser(User user) {
+        return toResponse(user);
+    }
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "user not found"));
+    @Transactional
+    public UserResponse updateUserPassword(User user, UpdateUserPasswordRequest request) {
+        if (!BCrypt.checkpw(request.getOldPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "user not found");
+        }
 
-        return jwtService.generateToken(user);
+        user.setPassword(BCrypt.hashpw(request.getNewPassword(), BCrypt.gensalt()));
+        user.setTokenExpiredAt(System.currentTimeMillis());
+        userRepository.save(user);
+
+        return toResponse(user);
     }
 }

@@ -7,11 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.List;
 
 @Setter
@@ -24,7 +21,7 @@ import java.util.List;
                 @UniqueConstraint(columnNames = "email")
         }
 )
-public class User implements UserDetails {
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -32,6 +29,11 @@ public class User implements UserDetails {
     private String name;
     private String email;
     private String password;
+
+    private String token;
+
+    @Column(name = "token_expired_at")
+    private Long tokenExpiredAt;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -41,41 +43,22 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // spring security methods
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(); // empty list because we are not using roles
-    }
+    @OneToMany(mappedBy = "manager")
+    private List<Project> managedProjects;
 
-    @Override
-    public String getUsername() {
-        return email;
-    }
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name= "projects",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "project_id", referencedColumnName = "id")
+    )
+    private List<Project> projects;
 
-    @Override
-    public String getPassword(){
-        return password;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
-
-
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name= "tasks",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "task_id", referencedColumnName = "id")
+    )
+    private List<Task> tasks;
 }
