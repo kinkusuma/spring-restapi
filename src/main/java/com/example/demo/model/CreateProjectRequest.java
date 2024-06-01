@@ -1,12 +1,15 @@
 package com.example.demo.model;
 
 import com.example.demo.entity.EProjectStatus;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -19,7 +22,10 @@ public class CreateProjectRequest {
 
     private String description;
     private Integer budget;
-    private String deadline;
+
+    @Future
+    private LocalDateTime deadline;
+
     private String videoPresentationUrl;
     private String imageUrl;
 }

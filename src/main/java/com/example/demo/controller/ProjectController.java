@@ -4,15 +4,19 @@ import com.example.demo.entity.User;
 import com.example.demo.model.*;
 import com.example.demo.service.ProjectService;
 import com.example.demo.service.TaskService;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 public class ProjectController {
     @Autowired
     private ProjectService projectService;
 
+    @Parameter(name = "user", hidden = true)
     @PostMapping(
             value = "/api/project",
             consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -25,6 +29,7 @@ public class ProjectController {
                 .build();
     }
 
+    @Parameter(name = "user", hidden = true)
     @GetMapping(
             value = "/api/project/{projectId}",
             produces = MediaType.APPLICATION_JSON_VALUE
@@ -36,6 +41,19 @@ public class ProjectController {
                 .build();
     }
 
+    @Parameter(name = "user", hidden = true)
+    @GetMapping(
+            value = "/api/project",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<List<ProjectResponse>> getProjects(User user){
+        List<ProjectResponse> projectResponses = projectService.getProjects(user);
+        return WebResponse.<List<ProjectResponse>>builder()
+                .data(projectResponses)
+                .build();
+    }
+
+    @Parameter(name = "user", hidden = true)
     @PutMapping(
             value = "/api/project/{projectId}/update",
             consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -48,6 +66,7 @@ public class ProjectController {
                 .build();
     }
 
+    @Parameter(name = "user", hidden = true)
     @PutMapping(
             value = "/api/project/{projectId}/reasignManager",
             consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -60,6 +79,7 @@ public class ProjectController {
                 .build();
     }
 
+    @Parameter(name = "user", hidden = true)
     @PutMapping(
             value = "/api/project/{projectId}/updateMembers",
             consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -72,6 +92,7 @@ public class ProjectController {
                 .build();
     }
 
+    @Parameter(name = "user", hidden = true)
     @DeleteMapping(
             value = "/api/project/{projectId}/delete",
             produces = MediaType.APPLICATION_JSON_VALUE

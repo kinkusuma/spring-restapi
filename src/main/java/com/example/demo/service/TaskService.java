@@ -3,10 +3,7 @@ package com.example.demo.service;
 import com.example.demo.entity.Project;
 import com.example.demo.entity.Task;
 import com.example.demo.entity.User;
-import com.example.demo.model.CreateTaskRequest;
-import com.example.demo.model.TaskResponse;
-import com.example.demo.model.UpdateTaskAssignees;
-import com.example.demo.model.UserResponse;
+import com.example.demo.model.*;
 import com.example.demo.repository.ProjectRepository;
 import com.example.demo.repository.TaskRepository;
 import com.example.demo.repository.UserRepository;
@@ -17,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,7 +47,7 @@ public class TaskService {
         Task task = new Task();
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
-        task.setDeadline(LocalDateTime.parse(request.getDeadline()));
+        task.setDeadline(request.getDeadline());
         task.setDocumentUrl(request.getDocumentUrl());
         task.setProject(project);
 
@@ -64,7 +63,7 @@ public class TaskService {
                 .description(task.getDescription())
                 .deadline(task.getDeadline())
                 .documentUrl(task.getDocumentUrl())
-                .assignees(task.getAssignees().stream()
+                .assignees(Optional.ofNullable(task.getAssignees()).orElse(Collections.emptyList()).stream()
                         .map(assignee -> UserResponse.builder()
                                 .id(assignee.getId())
                                 .name(assignee.getName())
@@ -86,8 +85,22 @@ public class TaskService {
         return toResponse(task);
     }
 
+    @Transactional(readOnly = true)
+    public List<TaskResponse> getTasks(String projectId, User user) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+
+        if (!project.getMembers().contains(user)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to access this project");
+        }
+
+        return project.getTasks().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
-    public TaskResponse updateTask(String taskId, User user, CreateTaskRequest request) {
+    public TaskResponse updateTask(String taskId, User user, UpdateTaskRequest request) {
         validationService.validate(request);
 
         Task task = taskRepository.findById(taskId)
@@ -97,10 +110,10 @@ public class TaskService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to access this task");
         }
 
-        task.setTitle(request.getTitle());
-        task.setDescription(request.getDescription());
-        task.setDeadline(LocalDateTime.parse(request.getDeadline()));
-        task.setDocumentUrl(request.getDocumentUrl());
+        request.getTitle().ifPresent(task::setTitle);
+        request.getDescription().ifPresent(task::setDescription);
+        request.getDeadline().ifPresent(task::setDeadline);
+        request.getDocumentUrl().ifPresent(task::setDocumentUrl);
 
         taskRepository.save(task);
 

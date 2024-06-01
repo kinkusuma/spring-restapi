@@ -48,8 +48,7 @@ public class AuthenticationService {
 
     @Transactional
     public void logout(User user) {
-        user.setToken(null);
-        user.setTokenExpiredAt(null);
+        user.setTokenExpiredAt(System.currentTimeMillis());
 
         userRepository.save(user);
     }

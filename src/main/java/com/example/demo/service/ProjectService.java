@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ProjectService {
@@ -34,10 +36,11 @@ public class ProjectService {
         project.setName(request.getName());
         project.setDescription(request.getDescription());
         project.setBudget(request.getBudget());
-        project.setDeadline(LocalDateTime.parse(request.getDeadline()));
+        project.setDeadline(request.getDeadline());
         project.setVideoPresentationUrl(request.getVideoPresentationUrl());
         project.setImageUrl(request.getImageUrl());
         project.setManager(user);
+        project.setMembers(List.of(user));
 
         projectRepository.save(project);
 
@@ -58,14 +61,14 @@ public class ProjectService {
                         .name(project.getManager().getName())
                         .email(project.getManager().getEmail())
                         .build())
-                .members(project.getMembers().stream()
+                .members(Optional.ofNullable(project.getMembers()).orElse(Collections.emptyList()).stream()
                         .map(user -> UserResponse.builder()
                                 .id(user.getId())
                                 .name(user.getName())
                                 .email(user.getEmail())
                                 .build())
                         .toList())
-                .tasks(project.getTasks().stream()
+                .tasks(Optional.ofNullable(project.getTasks()).orElse(Collections.emptyList()).stream()
                         .map(task -> TaskResponse.builder()
                                 .id(task.getId())
                                 .title(task.getTitle())
@@ -90,6 +93,15 @@ public class ProjectService {
         return toResponse(project);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getProjects(User user) {
+        return userRepository.findById(user.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"))
+                .getProjects().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     @Transactional
     public ProjectResponse updateProject(String id, User user, UpdateProjectRequest request) {
         validationService.validate(request);
@@ -104,7 +116,7 @@ public class ProjectService {
         request.getName().ifPresent(project::setName);
         request.getDescription().ifPresent(project::setDescription);
         request.getBudget().ifPresent(project::setBudget);
-        request.getDeadline().ifPresent(deadline -> project.setDeadline(LocalDateTime.parse(deadline)));
+        request.getDeadline().ifPresent(project::setDeadline);
         request.getVideoPresentationUrl().ifPresent(project::setVideoPresentationUrl);
         request.getImageUrl().ifPresent(project::setImageUrl);
 

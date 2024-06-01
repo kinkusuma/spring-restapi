@@ -41,6 +41,11 @@ public class Task {
     @JoinColumn(name = "project_id", referencedColumnName = "id")
     private Project project;
 
-    @ManyToMany(mappedBy = "tasks")
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name= "tasks_users",
+            joinColumns = @JoinColumn(name = "task_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id")
+    )
     private List<User> assignees;
 }

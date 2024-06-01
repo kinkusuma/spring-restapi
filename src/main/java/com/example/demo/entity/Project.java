@@ -49,7 +49,12 @@ public class Project {
     @JoinColumn(name = "manager_id", referencedColumnName = "id")
     private User manager;
 
-    @ManyToMany(mappedBy = "projects")
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name= "projects_users",
+            joinColumns = @JoinColumn(name = "project_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id")
+    )
     private List<User> members;
 
     @OneToMany(mappedBy = "project")
